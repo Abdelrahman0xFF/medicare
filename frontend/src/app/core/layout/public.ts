@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { KeyValuePipe } from '@angular/common';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { UiButton } from '../../shared/ui/button';
+import { AppLogo } from '../../shared/ui/logo';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { fluentNavigation, fluentDismiss } from '@ng-icons/fluent-ui';
 import {
@@ -40,7 +41,7 @@ import { scrollToElement } from '../../utils/scroll';
         }),
     ],
     selector: 'app-layout-public',
-    imports: [NgIcon, UiButton, KeyValuePipe, RouterLink, RouterOutlet],
+    imports: [NgIcon, UiButton, KeyValuePipe, RouterLink, RouterOutlet, AppLogo],
     template: `
         <div class="min-h-dvh bg-slate-50 flex flex-col">
             <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
@@ -48,14 +49,10 @@ import { scrollToElement } from '../../utils/scroll';
                     <div class="h-full flex items-center justify-between">
                         <button
                             (click)="scrollTo('hero')"
-                            class="flex items-center gap-2 cursor-pointer"
+                            class="flex items-center gap-3 cursor-pointer group"
                         >
-                            <div
-                                class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center"
-                            >
-                                <span class="text-white font-bold text-lg">MC</span>
-                            </div>
-                            <span class="font-bold text-slate-900 hidden sm:inline">
+                            <app-logo size="md" />
+                            <span class="font-bold text-slate-900 text-lg hidden sm:inline tracking-tight">
                                 MediCare Clinic
                             </span>
                         </button>
@@ -143,13 +140,9 @@ import { scrollToElement } from '../../utils/scroll';
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 pb-12">
                         <div>
-                            <div class="flex items-center gap-2 mb-4">
-                                <div
-                                    class="w-9 h-9 bg-primary rounded-lg flex items-center justify-center shrink-0"
-                                >
-                                    <span class="text-white font-bold text-sm">MC</span>
-                                </div>
-                                <span class="font-bold text-white text-lg">MediCare Clinic</span>
+                            <div class="flex items-center gap-3 mb-4">
+                                <app-logo size="sm" />
+                                <span class="font-bold text-white text-lg tracking-tight">MediCare Clinic</span>
                             </div>
                             <p class="text-sm text-slate-400 leading-relaxed mb-6">
                                 Providing quality healthcare services with compassion and

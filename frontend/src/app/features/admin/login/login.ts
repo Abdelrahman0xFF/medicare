@@ -4,23 +4,22 @@ import { NgIcon, provideIcons } from '@ng-icons/core';
 import { fluentEye, fluentEyeOff, fluentLockClosed, fluentPerson } from '@ng-icons/fluent-ui';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UiButton } from '../../../shared/ui/button';
+import { AppLogo } from '../../../shared/ui/logo';
 import { ScrollAnimateDirective } from '../../../shared/directives/scroll-animate.directive';
 
 @Component({
     viewProviders: [provideIcons({ fluentLockClosed, fluentPerson, fluentEye, fluentEyeOff })],
     selector: 'app-login',
-    imports: [NgIcon, RouterLink, UiButton, ScrollAnimateDirective],
+    imports: [NgIcon, RouterLink, UiButton, ScrollAnimateDirective, AppLogo],
     template: `
         <div class="min-h-dvh bg-slate-50 flex items-center justify-center p-4">
             <div class="w-full max-w-md">
                 <div class="text-center mb-8">
-                    <a routerLink="/" class="inline-flex items-center gap-3 mb-6">
-                        <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                            <span class="text-white font-bold text-xl">MC</span>
-                        </div>
+                    <a routerLink="/" class="inline-flex items-center gap-3.5 mb-6 group">
+                        <app-logo size="lg" />
                         <div class="text-left">
-                            <h2 class="font-bold text-slate-900 text-lg leading-tight">MediCare</h2>
-                            <p class="text-xs text-slate-500 leading-tight">Admin Panel</p>
+                            <h2 class="font-bold text-slate-900 text-xl leading-tight">MediCare</h2>
+                            <p class="text-xs text-slate-500 leading-tight font-medium">Admin Panel</p>
                         </div>
                     </a>
                     <h1 appScrollAnimate animateDirection="up" animateDelay="0ms" class="text-2xl font-bold text-slate-900">Welcome back</h1>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <defs>
+    <linearGradient id="medicare-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <filter id="medicare-shadow" x="-10%" y="-10%" width="120%" height="120%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#1e3a8a" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#medicare-bg)"/>
+  <!-- Medical Cross Shape with subtle shadow -->
+  <g filter="url(#medicare-shadow)">
+    <path fill="#ffffff" fill-rule="evenodd" clip-rule="evenodd" d="M26 12C26 10.3431 27.3431 9 29 9H35C36.6569 9 38 10.3431 38 12V24H50C51.6569 24 53 25.3431 53 27V33C53 34.6569 51.6569 36 50 36H38V48C38 49.6569 36.6569 51 35 51H29C27.3431 51 26 49.6569 26 48V36H14C12.3431 36 11 34.6569 11 33V27C11 25.3431 12.3431 24 14 24H26V12Z"/>
+    <!-- Heartbeat Pulse Line cutting across center of cross in Medical Blue -->
+    <path d="M12 30H22L25.5 35.5L30 18L35 40.5L38.5 28.5L41.5 30H52" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -13,6 +13,7 @@ import {
     fluentDismiss,
 } from '@ng-icons/fluent-ui';
 import { AuthService } from '../auth/auth.service';
+import { AppLogo } from '../../shared/ui/logo';
 
 @Component({
     viewProviders: [
@@ -29,7 +30,7 @@ import { AuthService } from '../auth/auth.service';
         }),
     ],
     selector: 'app-layout-admin',
-    imports: [RouterLink, RouterLinkActive, RouterOutlet, NgIcon],
+    imports: [RouterLink, RouterLinkActive, RouterOutlet, NgIcon, AppLogo],
     template: `
         <div class="h-dvh bg-slate-50 flex overflow-hidden">
             <!-- Mobile Sidebar Overlay -->
@@ -52,15 +53,11 @@ import { AuthService } from '../auth/auth.service';
                 "
             >
                 <div class="p-6 border-b border-slate-200 flex items-center justify-between">
-                    <a routerLink="/" class="flex items-center gap-3">
-                        <div
-                            class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center"
-                        >
-                            <span class="text-white font-bold text-lg">MC</span>
-                        </div>
+                    <a routerLink="/" class="flex items-center gap-3 group">
+                        <app-logo size="md" />
                         <div>
                             <h2 class="font-bold text-slate-900 leading-tight">MediCare</h2>
-                            <p class="text-[11px] text-slate-500 leading-tight">Admin Panel</p>
+                            <p class="text-[11px] text-slate-500 leading-tight font-medium">Admin Panel</p>
                         </div>
                     </a>
                     <button
@@ -120,10 +117,8 @@ import { AuthService } from '../auth/auth.service';
             <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <!-- Mobile Top Bar -->
                 <header class="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between shrink-0">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <span class="text-white font-bold text-sm">MC</span>
-                        </div>
+                    <div class="flex items-center gap-2.5">
+                        <app-logo size="sm" />
                         <span class="font-bold text-slate-900">Admin</span>
                     </div>
                     <button

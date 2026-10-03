@@ -13,7 +13,9 @@ import { SpinnerComponent } from '../../../shared/ui/spinner/spinner';
             <app-appointments-toolbar
                 [filterTabs]="filterTabs"
                 [selectedFilter]="selectedFilter()"
+                [searchQuery]="searchQuery()"
                 (filterChange)="selectedFilter.set($event)"
+                (searchChange)="searchQuery.set($event)"
             />
 
             @if (loading()) {
@@ -35,6 +37,7 @@ export class Appointments implements OnInit {
 
     appointments = signal<AppointmentDto[]>([]);
     selectedFilter = signal('all');
+    searchQuery = signal('');
     actionLoading = signal<string | null>(null);
     loading = signal(true);
 
@@ -71,12 +74,25 @@ export class Appointments implements OnInit {
 
     get displayAppointments() {
         const filter = this.selectedFilter();
-        const list =
+        const search = this.searchQuery().toLowerCase().trim();
+        let list =
             filter === 'all'
                 ? this.appointments()
                 : filter === 'rejected'
                   ? this.appointments().filter((a) => a.status === 'rejected' || a.status === 'cancelled')
                   : this.appointments().filter((a) => a.status === filter);
+
+        if (search) {
+            list = list.filter((a) => {
+                const patientObj = (a.patientId && typeof a.patientId === 'object') ? a.patientId : null;
+                const nameMatch = patientObj?.fullName?.toLowerCase().includes(search) ?? false;
+                const phoneMatch = patientObj?.phone?.includes(search) ?? false;
+                const dateMatch = a.date?.includes(search) ?? false;
+                const reasonMatch = a.reason?.toLowerCase().includes(search) ?? false;
+                return nameMatch || phoneMatch || dateMatch || reasonMatch;
+            });
+        }
+
         return list.map((a) => {
             const patientObj = (a.patientId && typeof a.patientId === 'object') ? a.patientId : null;
             return {

@@ -170,23 +170,38 @@ import { UiButton } from '../../../../shared/ui/button';
                         tabindex="0"
                         role="button"
                         [class]="
-                            'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors outline-none focus:ring-2 ' +
-                            (fileError || (showErrors && !receiptFileName)
-                                ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                                : 'border-slate-300 hover:border-blue-500 focus:border-blue-400 focus:ring-blue-100')
+                            'border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 outline-none focus:ring-2 ' +
+                            (isDragging
+                                ? 'border-blue-500 bg-blue-50/60 scale-[1.01]'
+                                : fileError || (showErrors && !receiptFileName)
+                                  ? 'border-red-300 focus:border-red-400 focus:ring-red-100 bg-red-50/20'
+                                  : 'border-slate-300 hover:border-blue-500 hover:bg-slate-50/50 focus:border-blue-400 focus:ring-blue-100')
                         "
                         (click)="fileInput.click()"
                         (keydown.enter)="fileInput.click()"
                         (keydown.space)="fileInput.click(); $event.preventDefault()"
+                        (dragover)="$event.preventDefault(); isDragging = true"
+                        (dragleave)="isDragging = false"
+                        (drop)="onFileDrop($event)"
                     >
                         @if (fileError) {
                             <p class="text-xs text-red-500 mb-2 font-medium">{{ fileError }}</p>
                         } @else if (showErrors && !receiptFileName) {
                             <p class="text-xs text-red-500 mb-2">Payment screenshot is required</p>
                         }
-                        <ng-icon name="fluentCloudAdd" size="32" class="text-slate-400 mb-3" />
-                        <p class="font-medium text-slate-900 mb-1">Upload Payment Screenshot</p>
-                        <p class="text-sm text-slate-500">PNG, JPG, or WebP, max 5MB</p>
+                        <ng-icon
+                            name="fluentCloudAdd"
+                            size="36"
+                            [class]="isDragging ? 'text-blue-600 scale-110' : 'text-slate-400'"
+                            class="mb-3 transition-transform"
+                        />
+                        <p class="font-medium text-slate-900 mb-1">
+                            {{ isDragging ? 'Drop receipt image here' : 'Upload Payment Screenshot' }}
+                        </p>
+                        <p class="text-sm text-slate-500">
+                            Drag & drop or <span class="text-blue-600 font-semibold underline underline-offset-2">browse</span>
+                        </p>
+                        <p class="text-xs text-slate-400 mt-1">PNG, JPG, or WebP, max 5MB</p>
                         <input
                             #fileInput
                             type="file"
@@ -197,16 +212,34 @@ import { UiButton } from '../../../../shared/ui/button';
                     </div>
                 } @else {
                     <div
-                        class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-center justify-between"
+                        class="bg-emerald-50/80 border border-emerald-200 rounded-xl p-4 flex items-center justify-between gap-4 shadow-xs"
                     >
-                        <div class="flex items-center gap-3 min-w-0">
-                            <ng-icon
-                                name="fluentCheckmarkCircle"
-                                size="20"
-                                class="text-emerald-600 shrink-0"
-                            />
+                        <div class="flex items-center gap-3.5 min-w-0">
+                            @if (previewUrl) {
+                                <img
+                                    [src]="previewUrl"
+                                    alt="Payment receipt preview"
+                                    class="size-14 rounded-lg object-cover border border-emerald-300 shadow-xs shrink-0"
+                                />
+                            } @else {
+                                <div
+                                    class="size-12 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0"
+                                >
+                                    <ng-icon
+                                        name="fluentCheckmarkCircle"
+                                        size="24"
+                                        class="text-emerald-600"
+                                    />
+                                </div>
+                            }
                             <div class="min-w-0">
-                                <p class="font-medium text-slate-900 text-sm truncate">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                                        <ng-icon name="fluentCheckmarkCircle" size="12" />
+                                        Receipt Attached
+                                    </span>
+                                </div>
+                                <p class="font-medium text-slate-900 text-sm truncate mt-0.5">
                                     {{ receiptFileName }}
                                 </p>
                                 <p class="text-xs text-slate-500">{{ receiptFileSizeKB }} KB</p>
@@ -214,10 +247,11 @@ import { UiButton } from '../../../../shared/ui/button';
                         </div>
                         <button
                             type="button"
-                            (click)="removeReceipt.emit(); showErrors = false; fileError = ''"
-                            class="size-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer shrink-0"
+                            (click)="handleRemoveReceipt()"
+                            title="Remove file"
+                            class="size-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-white hover:text-rose-600 hover:shadow-xs transition cursor-pointer shrink-0"
                         >
-                            <ng-icon name="fluentDismiss" size="16" />
+                            <ng-icon name="fluentDismiss" size="18" />
                         </button>
                     </div>
                 }
@@ -244,6 +278,8 @@ export class BookingStepPayment {
     copiedKey = '';
     showErrors = false;
     fileError = '';
+    isDragging = false;
+    previewUrl: string | null = null;
 
     copyText(text: string, key: string) {
         navigator.clipboard.writeText(text);
@@ -289,20 +325,45 @@ export class BookingStepPayment {
         }
     }
 
+    processFile(file: File) {
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+        if (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
+            this.fileError = 'File must be a JPG, PNG, or WebP under 5MB';
+            return;
+        }
+
+        if (this.previewUrl) {
+            URL.revokeObjectURL(this.previewUrl);
+        }
+        this.previewUrl = URL.createObjectURL(file);
+        this.fileError = '';
+        this.fileSelected.emit(file);
+        this.showErrors = false;
+    }
+
     onFileSelected(event: Event) {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
         if (!file) return;
+        this.processFile(file);
+        input.value = '';
+    }
 
-        const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
-        if (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
-            this.fileError = 'File must be a JPG, PNG, or WebP under 5MB';
-            input.value = '';
-            return;
+    onFileDrop(event: DragEvent) {
+        event.preventDefault();
+        this.isDragging = false;
+        const file = event.dataTransfer?.files?.[0];
+        if (!file) return;
+        this.processFile(file);
+    }
+
+    handleRemoveReceipt() {
+        if (this.previewUrl) {
+            URL.revokeObjectURL(this.previewUrl);
+            this.previewUrl = null;
         }
-
-        this.fileError = '';
-        this.fileSelected.emit(file);
+        this.removeReceipt.emit();
         this.showErrors = false;
+        this.fileError = '';
     }
 }

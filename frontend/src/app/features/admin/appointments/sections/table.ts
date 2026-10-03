@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import {
     fluentEye,
@@ -269,6 +269,13 @@ export class AppointmentsTable {
 
     viewApt: (typeof this.appointments)[0] | null = null;
 
+    @HostListener('document:keydown.escape')
+    onEscapeKey(): void {
+        if (this.viewApt) {
+            this.viewApt = null;
+        }
+    }
+
     statusBadgeClass(status: string): string {
         const base = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium';
         switch (status) {
@@ -277,6 +284,7 @@ export class AppointmentsTable {
             case 'approved':
                 return `${base} bg-blue-100 text-blue-700`;
             case 'rejected':
+            case 'cancelled':
                 return `${base} bg-rose-100 text-rose-700`;
             default:
                 return `${base} bg-slate-100 text-slate-700`;

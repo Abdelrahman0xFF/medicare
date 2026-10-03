@@ -18,10 +18,15 @@ import { AppointmentDto } from '../../../../core/api/appointment/appointment.typ
             </div>
 
             <h2 class="text-3xl font-bold text-slate-900 mb-2">Booking Request Received!</h2>
-            <p class="text-slate-500 mb-8 max-w-md mx-auto">
+            <p class="text-slate-500 mb-6 max-w-md mx-auto">
                 Thank you for booking with MediCare Clinic. Your appointment request is pending
                 review and you will receive confirmation soon.
             </p>
+
+            <div class="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-full text-emerald-800 text-xs sm:text-sm font-medium mb-8 shadow-xs">
+                <span class="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>An instant SMS & WhatsApp notification has been sent to your phone</span>
+            </div>
 
             <div
                 class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8 text-left max-w-md mx-auto"

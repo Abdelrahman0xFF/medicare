@@ -266,15 +266,19 @@ import { scrollToElement } from '../../utils/scroll';
                 </div>
             </footer>
 
-            <a
-                href="https://wa.me/{{ phone() }}"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition flex items-center justify-center text-white z-50"
-                aria-label="Contact us on WhatsApp"
-            >
-                <ng-icon size="30" name="faBrandWhatsapp" />
-            </a>
+            @if (whatsappUrl()) {
+                <a
+                    [href]="whatsappUrl()"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 hover:bg-blue-600 rounded-full shadow-[0_4px_18px_rgba(14,165,233,0.45)] hover:shadow-[0_6px_24px_rgba(14,165,233,0.6)] hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center text-white z-50 group"
+                    aria-label="Chat with us on WhatsApp"
+                    title="Chat with us on WhatsApp"
+                >
+                    <span class="absolute inset-0 rounded-full bg-blue500 opacity-25 animate-ping pointer-events-none group-hover:opacity-0"></span>
+                    <ng-icon size="30" name="faBrandWhatsapp" class="relative z-10" />
+                </a>
+            }
         </div>
     `,
 })
@@ -295,6 +299,13 @@ export class LayoutPublic implements OnInit {
 
     address = computed(() => this.clinic.clinicData()?.address ?? '');
     phone = computed(() => this.clinic.clinicData()?.phone ?? '');
+    whatsappUrl = computed(() => {
+        let p = this.phone().replace(/\D/g, '');
+        if (p.startsWith('01') && p.length === 11) {
+            p = '20' + p.substring(1);
+        }
+        return p ? `https://wa.me/${p}` : '';
+    });
     socialMedia = computed(() => this.clinic.clinicData()?.socialMedia ?? {});
     workingHoursList = computed(() => {
         const data = this.clinic.clinicData();

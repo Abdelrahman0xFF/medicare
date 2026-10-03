@@ -3,12 +3,12 @@ import { logger } from "../utils/logger.js";
 import { Patient } from "../models/patient.model.js";
 import { QueueEntry } from "../models/queue.model.js";
 import { Clinic } from "../models/clinic.model.js";
-import { v2 as cloudinary } from "cloudinary";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../utils/AppError.js";
 import { sendSMS } from "../utils/sms.js";
 import { sendWhatsAppMessage } from "../utils/whatsapp-gateway.js";
 import { normalizeEgyptianPhone } from "../utils/phone.js";
+import { deleteCloudinaryAsset } from "../utils/cloudinaryHelper.js";
 
 export const createAppointment = asyncHandler(async (req, res, next) => {
     const { fullName, phone, reason, date, time } = req.body;
@@ -21,6 +21,7 @@ export const createAppointment = asyncHandler(async (req, res, next) => {
     });
 
     if (existingAppointment) {
+        if (req.file) await deleteCloudinaryAsset(req.file.filename || req.file.path);
         return next(new AppError("This time slot is already booked", 400));
     }
 
@@ -32,6 +33,7 @@ export const createAppointment = asyncHandler(async (req, res, next) => {
     let patient = await Patient.findOne({ phone: normalizedPhone });
     if (patient) {
         if (patient.fullName !== fullName.trim()) {
+            if (req.file) await deleteCloudinaryAsset(req.file.filename || req.file.path);
             return next(new AppError("This phone number is already associated with a different name", 400));
         }
     } else {
@@ -54,6 +56,9 @@ export const createAppointment = asyncHandler(async (req, res, next) => {
             data: newAppointment,
         });
     } catch (err) {
+        if (req.file) {
+            await deleteCloudinaryAsset(req.file.filename || req.file.path);
+        }
         if (err.code === 11000) {
             return next(
                 new AppError(
@@ -217,15 +222,8 @@ export const updateAppointmentStatus = asyncHandler(async (req, res, next) => {
     let responseMessage = `Appointment ${req.body.status}`;
 
     if (req.body.status === "rejected" && appointment.receiptImageUrl) {
-        try {
-            const parts = appointment.receiptImageUrl.split("/");
-            const filenameWithExt = parts[parts.length - 1];
-            const folder = parts[parts.length - 2];
-            const filename = filenameWithExt.split(".")[0];
-            const publicId = `${folder}/${filename}`;
-            await cloudinary.uploader.destroy(publicId);
-        } catch (err) {
-            logger.error(`Failed to delete image from Cloudinary: ${err.message}`);
+        const deleted = await deleteCloudinaryAsset(appointment.receiptImageUrl);
+        if (!deleted) {
             responseMessage += " (Warning: receipt image cleanup failed)";
         }
     }

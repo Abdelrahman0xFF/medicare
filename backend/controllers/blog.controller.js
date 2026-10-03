@@ -1,6 +1,7 @@
 import { BlogPost } from "../models/blog.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../utils/AppError.js";
+import { deleteCloudinaryAsset } from "../utils/cloudinaryHelper.js";
 
 const parseJsonFields = (body) => {
     for (const field of ["tableOfContents", "faqs"]) {
@@ -25,12 +26,20 @@ export const createBlogPost = asyncHandler(async (req, res, next) => {
     if (typeof req.body.readTimeMinutes === "string") {
         req.body.readTimeMinutes = parseInt(req.body.readTimeMinutes, 10);
     }
-    const newPost = await BlogPost.create(req.body);
-    return res.status(201).json({
-        success: true,
-        message: "Blog post created successfully",
-        data: newPost,
-    });
+
+    try {
+        const newPost = await BlogPost.create(req.body);
+        return res.status(201).json({
+            success: true,
+            message: "Blog post created successfully",
+            data: newPost,
+        });
+    } catch (err) {
+        if (req.file) {
+            await deleteCloudinaryAsset(req.file.filename || req.file.path);
+        }
+        throw err;
+    }
 });
 
 export const getBlogPosts = asyncHandler(async (req, res, next) => {
@@ -78,11 +87,20 @@ export const getBlogPostById = asyncHandler(async (req, res, next) => {
 export const updateBlogPost = asyncHandler(async (req, res, next) => {
     const post = await BlogPost.findById(req.params.id);
     if (!post) {
+        if (req.file) {
+            await deleteCloudinaryAsset(req.file.filename || req.file.path);
+        }
         return next(new AppError("Blog post not found", 404));
     }
+
     if (req.file) {
+        // Destroy old cover image when a new one is uploaded
+        if (post.coverImageUrl) {
+            await deleteCloudinaryAsset(post.coverImageUrl);
+        }
         req.body.coverImageUrl = req.file.path;
     }
+
     parseJsonFields(req.body);
     if (typeof req.body.readTimeMinutes === "string") {
         req.body.readTimeMinutes = parseInt(req.body.readTimeMinutes, 10);
@@ -99,6 +117,11 @@ export const deleteBlogPost = asyncHandler(async (req, res, next) => {
     if (!post) {
         return next(new AppError("Blog post not found", 404));
     }
+
+    if (post.coverImageUrl) {
+        await deleteCloudinaryAsset(post.coverImageUrl);
+    }
+
     return res
         .status(200)
         .json({ success: true, message: "Blog post deleted" });

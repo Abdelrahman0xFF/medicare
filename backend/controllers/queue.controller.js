@@ -5,20 +5,28 @@ import { AppError } from "../utils/AppError.js";
 
 export const getLiveQueue = asyncHandler(async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 50));
     const skip = (page - 1) * limit;
 
+    let date = req.query.date;
+    if (!date) {
+        const now = new Date();
+        date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    }
+
+    const filter = { date };
+
     const [queue, total] = await Promise.all([
-        QueueEntry.find()
+        QueueEntry.find(filter)
             .skip(skip)
             .limit(limit)
             .populate({
                 path: "appointmentId",
-                select: "time patientId",
-                populate: { path: "patientId", select: "fullName" },
+                select: "time patientId date",
+                populate: { path: "patientId", select: "fullName phone" },
             })
             .sort({ createdAt: 1 }),
-        QueueEntry.countDocuments(),
+        QueueEntry.countDocuments(filter),
     ]);
 
     return res.status(200).json({

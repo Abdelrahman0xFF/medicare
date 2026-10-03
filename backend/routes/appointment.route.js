@@ -18,6 +18,7 @@ import {
 
 import { protectAdminRoute } from "../middlewares/auth.middleware.js";
 import { validateRequest } from "../middlewares/validate.middleware.js";
+import { bookingLimiter } from "../utils/rateLimiter.js";
 
 export const router = Router();
 
@@ -26,6 +27,7 @@ router.get("/slots", getAvailableTimeSlots);
 router.get("/:phone/:fullName", getPatientAppointments);
 router.post(
     "/",
+    bookingLimiter,
     upload.single("receiptFile"),
     validateRequest(validateAppointmentForm),
     createAppointment,

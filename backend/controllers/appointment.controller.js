@@ -212,7 +212,7 @@ export const updateAppointmentStatus = asyncHandler(async (req, res, next) => {
         if (patient && patient.phone) {
             const message = `Hello ${patient.fullName}, your appointment at MediCare Clinic for ${appointment.date} at ${appointment.time} is confirmed!`;
             // sendSMS(patient.phone, message);
-            await sendWhatsAppMessage(patient.phone, message);
+            // await sendWhatsAppMessage(patient.phone, message);
         }
     }
 
@@ -291,7 +291,8 @@ export const checkInAppointment = asyncHandler(async (req, res, next) => {
 
     const queueEntry = await QueueEntry.create({
         appointmentId: appointment._id,
-        time: new Date().toISOString(),
+        date: appointment.date,
+        time: appointment.time || new Date().toISOString().substring(11, 16),
         stage: "waiting",
     });
 

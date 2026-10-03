@@ -12,6 +12,7 @@ export class QueueApi {
     getAll(params?: {
         page?: number;
         limit?: number;
+        date?: string;
     }): Observable<PaginatedResponse<QueueEntryDto>> {
         return this.http.get<PaginatedResponse<QueueEntryDto>>(this.base, { params });
     }

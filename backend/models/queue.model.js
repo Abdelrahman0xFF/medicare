@@ -7,6 +7,7 @@ const queueEntrySchema = new mongoose.Schema(
             ref: "Appointment",
             required: true,
         },
+        date: { type: String, required: true },
         time: { type: String, required: true },
         stage: {
             type: String,
@@ -23,6 +24,6 @@ const queueEntrySchema = new mongoose.Schema(
     },
 );
 
-queueEntrySchema.index({ stage: 1, createdAt: 1 });
+queueEntrySchema.index({ date: 1, stage: 1, createdAt: 1 });
 
 export const QueueEntry = mongoose.model("QueueEntry", queueEntrySchema);

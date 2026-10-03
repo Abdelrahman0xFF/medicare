@@ -18,6 +18,7 @@ import {
 
 import { protectAdminRoute } from "../middlewares/auth.middleware.js";
 import { validateRequest } from "../middlewares/validate.middleware.js";
+import { authLimiter } from "../utils/rateLimiter.js";
 
 export const router = Router();
 
@@ -36,7 +37,7 @@ router.put(
     validateRequest(validateAdminUpdate),
     edit,
 );
-router.post("/login", validateRequest(validateAdminLogin), login);
+router.post("/login", authLimiter, validateRequest(validateAdminLogin), login);
 router.delete("/:id", protectAdminRoute, deleteAdmin);
 router.post("/logout", protectAdminRoute, logout);
 

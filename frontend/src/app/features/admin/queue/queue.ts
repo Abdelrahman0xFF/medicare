@@ -84,13 +84,36 @@ export class Queue implements OnInit {
     queueEntries = signal<QueueEntryDto[]>([]);
     todayAppointments = signal<CheckInCandidate[]>([]);
 
+    private getPatientName(e: QueueEntryDto): string {
+        if (e.appointmentId && typeof e.appointmentId === 'object' && e.appointmentId.patientId) {
+            const p = e.appointmentId.patientId;
+            return typeof p === 'object' && p.fullName ? p.fullName : 'Unknown Patient';
+        }
+        return 'Unknown Patient';
+    }
+
+    private getAppointmentTime(e: QueueEntryDto): string {
+        if (e.appointmentId && typeof e.appointmentId === 'object' && e.appointmentId.time) {
+            return e.appointmentId.time;
+        }
+        return e.time || '--:--';
+    }
+
+    private getTodayDateString(): string {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
     waitingCards = computed<QueueCardItem[]>(() =>
         this.queueEntries()
             .filter((e) => e.stage === 'waiting')
             .map((e) => ({
                 id: e.id,
-                patientName: e.appointmentId.patientId.fullName,
-                time: e.appointmentId.time,
+                patientName: this.getPatientName(e),
+                time: this.getAppointmentTime(e),
             })),
     );
 
@@ -99,8 +122,8 @@ export class Queue implements OnInit {
             .filter((e) => e.stage === 'in_consultation')
             .map((e) => ({
                 id: e.id,
-                patientName: e.appointmentId.patientId.fullName,
-                time: e.appointmentId.time,
+                patientName: this.getPatientName(e),
+                time: this.getAppointmentTime(e),
             })),
     );
 
@@ -109,16 +132,28 @@ export class Queue implements OnInit {
             .filter((e) => e.stage === 'completed')
             .map((e) => ({
                 id: e.id,
-                patientName: e.appointmentId.patientId.fullName,
-                time: e.appointmentId.time,
+                patientName: this.getPatientName(e),
+                time: this.getAppointmentTime(e),
             })),
     );
 
     checkInCandidates = computed<CheckInCandidate[]>(() => {
-        const queueNames = new Set(
-            this.queueEntries().map((e) => e.appointmentId.patientId.fullName),
+        const queuedAppointmentIds = new Set(
+            this.queueEntries()
+                .map((e) => {
+                    if (!e.appointmentId) return null;
+                    if (typeof e.appointmentId === 'object') {
+                        return (
+                            e.appointmentId.id ||
+                            (e.appointmentId as unknown as { _id?: string })._id ||
+                            null
+                        );
+                    }
+                    return e.appointmentId as unknown as string;
+                })
+                .filter(Boolean),
         );
-        return this.todayAppointments().filter((a) => !queueNames.has(a.patientName));
+        return this.todayAppointments().filter((a) => !queuedAppointmentIds.has(a.id));
     });
 
     ngOnInit() {
@@ -127,9 +162,9 @@ export class Queue implements OnInit {
 
     private loadData() {
         this.loading.set(true);
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getTodayDateString();
         forkJoin({
-            queue: this.queueApi.getAll({ limit: 100 }),
+            queue: this.queueApi.getAll({ date: today, limit: 100 }),
             appointments: this.appointmentApi.getAll({ date: today, limit: 100 }),
         }).subscribe({
             next: ({ queue, appointments }) => {
@@ -140,7 +175,8 @@ export class Queue implements OnInit {
                             (a) =>
                                 a.status === 'approved' &&
                                 !a.checkedIn &&
-                                typeof a.patientId !== 'string',
+                                typeof a.patientId !== 'string' &&
+                                a.patientId !== null,
                         )
                         .map((a) => ({
                             id: a.id,

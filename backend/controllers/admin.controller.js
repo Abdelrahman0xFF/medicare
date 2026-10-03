@@ -64,13 +64,23 @@ export const edit = asyncHandler(async (req, res, next) => {
         return next(new AppError("Admin not found", 404));
     }
 
-    admin.username = username;
-    admin.password = password;
+    if (username && username.trim() !== admin.username) {
+        const existing = await Admin.findOne({ username: username.trim(), _id: { $ne: admin._id } });
+        if (existing) {
+            return next(new AppError("Username is already taken by another administrator", 400));
+        }
+        admin.username = username.trim();
+    }
+
+    if (password && password.trim()) {
+        admin.password = password.trim();
+    }
+
     await admin.save();
 
     return res.status(200).json({
         success: true,
-        message: "Admin updated successfully",
+        message: "Admin profile updated successfully",
         data: {
             admin: { username: admin.username },
         },

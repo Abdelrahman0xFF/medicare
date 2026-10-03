@@ -36,7 +36,7 @@ export class AppointmentApi {
 
     updateStatus(
         id: string,
-        status: 'approved' | 'rejected',
+        status: 'approved' | 'rejected' | 'completed',
     ): Observable<ApiResponse<AppointmentDto>> {
         return this.http.put<ApiResponse<AppointmentDto>>(`${this.base}/${id}`, { status });
     }

@@ -22,14 +22,12 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-// Security HTTP headers
 app.use(
     helmet({
         crossOriginResourcePolicy: { policy: "cross-origin" },
     }),
 );
 
-// Restricted CORS configuration
 const configuredFrontend = process.env.FRONTEND_URL?.replace(/\/+$/, "");
 const allowedOrigins = [
     configuredFrontend,
@@ -42,7 +40,6 @@ const allowedOrigins = [
 app.use(
     cors({
         origin: (origin, callback) => {
-            // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
             if (!origin || allowedOrigins.includes(origin)) {
                 return callback(null, true);
             }

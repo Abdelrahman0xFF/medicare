@@ -25,5 +25,6 @@ const queueEntrySchema = new mongoose.Schema(
 );
 
 queueEntrySchema.index({ date: 1, stage: 1, createdAt: 1 });
+queueEntrySchema.index({ appointmentId: 1 }, { unique: true });
 
 export const QueueEntry = mongoose.model("QueueEntry", queueEntrySchema);

@@ -96,12 +96,15 @@ export class Dashboard implements OnInit {
         return this.appointments()
             .filter((a) => a.status === 'pending')
             .slice(0, 3)
-            .map((a) => ({
-                id: a.id,
-                patientName: typeof a.patientId === 'object' ? a.patientId.fullName : 'Unknown',
-                date: a.date,
-                time: a.time,
-                reason: a.reason || undefined,
-            }));
+            .map((a) => {
+                const patientObj = (a.patientId && typeof a.patientId === 'object') ? a.patientId : null;
+                return {
+                    id: a.id,
+                    patientName: patientObj ? patientObj.fullName : 'Unknown Patient',
+                    date: a.date,
+                    time: a.time,
+                    reason: a.reason || undefined,
+                };
+            });
     }
 }

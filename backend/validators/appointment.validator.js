@@ -1,14 +1,15 @@
 import Joi from "joi";
+import { EGYPTIAN_PHONE_REGEX } from "../utils/phone.js";
 
 export const validateAppointmentForm = (data) => {
     const schema = Joi.object({
         fullName: Joi.string().min(3).max(100).required(),
         phone: Joi.string()
-            .pattern(/^\+?201[0125][0-9]{8}$/)
+            .pattern(EGYPTIAN_PHONE_REGEX)
             .required()
             .messages({
                 "string.pattern.base":
-                    "Phone number must be a valid Egyptian mobile number starting with location code 20 (e.g. 201123123123).",
+                    "Phone number must be a valid Egyptian mobile number (e.g. 01012345678 or +201012345678).",
             }),
         reason: Joi.string().min(0).max(500).optional().allow(""),
         date: Joi.string()
@@ -37,11 +38,11 @@ export const validateRescheduleAppointment = (data) => {
     const schema = Joi.object({
         fullName: Joi.string().min(3).max(100).required(),
         phone: Joi.string()
-            .pattern(/^\+?201[0125][0-9]{8}$/)
+            .pattern(EGYPTIAN_PHONE_REGEX)
             .required()
             .messages({
                 "string.pattern.base":
-                    "Phone number must be a valid Egyptian mobile number starting with location code 20 (e.g. 201123123123).",
+                    "Phone number must be a valid Egyptian mobile number (e.g. 01012345678 or +201012345678).",
             }),
         date: Joi.string()
             .pattern(/^\d{4}-\d{2}-\d{2}$/)
@@ -67,7 +68,7 @@ export const validateRescheduleAppointment = (data) => {
 export const validateUpdateAppointment = (data) => {
     const schema = Joi.object({
         status: Joi.string()
-            .valid("pending", "approved", "rejected")
+            .valid("pending", "approved", "rejected", "completed")
             .required(),
     });
     return schema.validate(data);

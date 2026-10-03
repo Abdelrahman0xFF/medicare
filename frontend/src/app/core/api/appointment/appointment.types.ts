@@ -4,7 +4,7 @@ export interface AppointmentDto {
     reason: string;
     date: string;
     time: string;
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'approved' | 'rejected' | 'completed';
     receiptImageUrl?: string;
     checkedIn: boolean;
     createdAt: string;

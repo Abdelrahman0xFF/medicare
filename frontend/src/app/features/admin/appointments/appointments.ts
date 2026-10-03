@@ -75,16 +75,19 @@ export class Appointments implements OnInit {
             filter === 'all'
                 ? this.appointments()
                 : this.appointments().filter((a) => a.status === filter);
-        return list.map((a) => ({
-            id: a.id,
-            patientName: typeof a.patientId === 'object' ? a.patientId.fullName : 'Unknown',
-            date: a.date,
-            time: a.time,
-            phone: typeof a.patientId === 'object' ? a.patientId.phone : '',
-            status: a.status,
-            reason: a.reason || undefined,
-            receiptImageUrl: a.receiptImageUrl || undefined,
-        }));
+        return list.map((a) => {
+            const patientObj = (a.patientId && typeof a.patientId === 'object') ? a.patientId : null;
+            return {
+                id: a.id,
+                patientName: patientObj ? patientObj.fullName : 'Unknown Patient',
+                date: a.date,
+                time: a.time,
+                phone: patientObj ? patientObj.phone : '',
+                status: a.status,
+                reason: a.reason || undefined,
+                receiptImageUrl: a.receiptImageUrl || undefined,
+            };
+        });
     }
 
     handleApprove(id: string): void {

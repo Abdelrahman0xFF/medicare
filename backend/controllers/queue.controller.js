@@ -42,7 +42,7 @@ export const updateQueueStage = asyncHandler(async (req, res, next) => {
     const entry = await QueueEntry.findByIdAndUpdate(
         req.params.id,
         { stage: req.body.stage },
-        { new: true },
+        { returnDocument: "after" },
     );
 
     if (!entry) {

@@ -8,9 +8,11 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../utils/AppError.js";
 import { sendSMS } from "../utils/sms.js";
 import { sendWhatsAppMessage } from "../utils/whatsapp-gateway.js";
+import { normalizeEgyptianPhone } from "../utils/phone.js";
 
 export const createAppointment = asyncHandler(async (req, res, next) => {
     const { fullName, phone, reason, date, time } = req.body;
+    const normalizedPhone = normalizeEgyptianPhone(phone);
 
     const existingAppointment = await Appointment.findOne({
         date,
@@ -27,29 +29,41 @@ export const createAppointment = asyncHandler(async (req, res, next) => {
         receiptImageUrl = req.file.path;
     }
 
-    let patient = await Patient.findOne({ phone });
+    let patient = await Patient.findOne({ phone: normalizedPhone });
     if (patient) {
         if (patient.fullName !== fullName.trim()) {
             return next(new AppError("This phone number is already associated with a different name", 400));
         }
     } else {
-        patient = await Patient.create({ fullName, phone });
+        patient = await Patient.create({ fullName: fullName.trim(), phone: normalizedPhone });
     }
 
-    const newAppointment = await Appointment.create({
-        patientId: patient._id,
-        reason,
-        date,
-        time,
-        receiptImageUrl,
-        status: "pending",
-    });
+    try {
+        const newAppointment = await Appointment.create({
+            patientId: patient._id,
+            reason,
+            date,
+            time,
+            receiptImageUrl,
+            status: "pending",
+        });
 
-    return res.status(201).json({
-        success: true,
-        message: "Appointment request submitted",
-        data: newAppointment,
-    });
+        return res.status(201).json({
+            success: true,
+            message: "Appointment request submitted",
+            data: newAppointment,
+        });
+    } catch (err) {
+        if (err.code === 11000) {
+            return next(
+                new AppError(
+                    "This time slot was just booked by another patient. Please select another slot.",
+                    409,
+                ),
+            );
+        }
+        throw err;
+    }
 });
 
 export const getAvailableTimeSlots = asyncHandler(async (req, res, next) => {
@@ -143,9 +157,17 @@ export const getAppointments = asyncHandler(async (req, res, next) => {
         Appointment.countDocuments(filter),
     ]);
 
+    const safeAppointments = appointments.map((appt) => {
+        const obj = appt.toJSON();
+        if (!obj.patientId) {
+            obj.patientId = { id: "", fullName: "Unknown Patient", phone: "" };
+        }
+        return obj;
+    });
+
     return res.status(200).json({
         success: true,
-        data: appointments,
+        data: safeAppointments,
         total,
         page,
         totalPages: Math.ceil(total / limit),
@@ -154,7 +176,8 @@ export const getAppointments = asyncHandler(async (req, res, next) => {
 
 export const getPatientAppointments = asyncHandler(async (req, res, next) => {
     const { phone, fullName } = req.params;
-    const patient = await Patient.findOne({ phone, fullName: fullName.trim() });
+    const normalizedPhone = normalizeEgyptianPhone(phone);
+    const patient = await Patient.findOne({ phone: normalizedPhone, fullName: fullName.trim() });
     if (!patient) {
         return next(new AppError("Patient not found", 404));
     }
@@ -212,7 +235,7 @@ export const updateAppointmentStatus = asyncHandler(async (req, res, next) => {
         if (patient && patient.phone) {
             const message = `Hello ${patient.fullName}, your appointment at MediCare Clinic for ${appointment.date} at ${appointment.time} is confirmed!`;
             // sendSMS(patient.phone, message);
-            // await sendWhatsAppMessage(patient.phone, message);
+            await sendWhatsAppMessage(patient.phone, message);
         }
     }
 
@@ -225,8 +248,9 @@ export const updateAppointmentStatus = asyncHandler(async (req, res, next) => {
 
 export const rescheduleAppointment = asyncHandler(async (req, res, next) => {
     const { date, time, phone, fullName } = req.body;
+    const normalizedPhone = normalizeEgyptianPhone(phone);
 
-    const patient = await Patient.findOne({ phone, fullName });
+    const patient = await Patient.findOne({ phone: normalizedPhone, fullName: fullName.trim() });
     if (!patient) {
         return next(new AppError("Patient not found", 404));
     }
@@ -260,13 +284,26 @@ export const rescheduleAppointment = asyncHandler(async (req, res, next) => {
     appointment.time = time;
     appointment.status = "pending";
     appointment.checkedIn = false;
-    await appointment.save();
 
-    return res.status(200).json({
-        success: true,
-        message: "Appointment rescheduled successfully",
-        data: appointment,
-    });
+    try {
+        await appointment.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Appointment rescheduled successfully",
+            data: appointment,
+        });
+    } catch (err) {
+        if (err.code === 11000) {
+            return next(
+                new AppError(
+                    "This time slot was just booked by another patient. Please select another slot.",
+                    409,
+                ),
+            );
+        }
+        throw err;
+    }
 });
 
 export const checkInAppointment = asyncHandler(async (req, res, next) => {
@@ -282,23 +319,32 @@ export const checkInAppointment = asyncHandler(async (req, res, next) => {
     const appointment = await Appointment.findByIdAndUpdate(
         req.params.id,
         { checkedIn: true },
-        { new: true },
+        { returnDocument: "after" },
     );
 
     if (!appointment) {
         return next(new AppError("Appointment not found", 404));
     }
 
-    const queueEntry = await QueueEntry.create({
-        appointmentId: appointment._id,
-        date: appointment.date,
-        time: appointment.time || new Date().toISOString().substring(11, 16),
-        stage: "waiting",
-    });
+    try {
+        const queueEntry = await QueueEntry.create({
+            appointmentId: appointment._id,
+            date: appointment.date,
+            time: appointment.time || new Date().toISOString().substring(11, 16),
+            stage: "waiting",
+        });
 
-    return res.status(200).json({
-        success: true,
-        message: "Patient checked in and added to queue",
-        data: { appointment, queueEntry },
-    });
+        return res.status(200).json({
+            success: true,
+            message: "Patient checked in and added to queue",
+            data: { appointment, queueEntry },
+        });
+    } catch (err) {
+        if (err.code === 11000) {
+            return next(
+                new AppError("Patient is already checked in to the queue", 400),
+            );
+        }
+        throw err;
+    }
 });

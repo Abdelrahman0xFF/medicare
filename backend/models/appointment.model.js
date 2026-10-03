@@ -12,7 +12,7 @@ const appointmentSchema = new mongoose.Schema(
         time: { type: String, required: true },
         status: {
             type: String,
-            enum: ["pending", "approved", "rejected"],
+            enum: ["pending", "approved", "rejected", "completed"],
             default: "pending",
         },
         receiptImageUrl: { type: String },
@@ -28,6 +28,12 @@ const appointmentSchema = new mongoose.Schema(
 );
 
 appointmentSchema.index({ date: 1, status: 1 });
-appointmentSchema.index({ date: 1, time: 1 });
+appointmentSchema.index(
+    { date: 1, time: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { status: { $in: ["pending", "approved", "completed"] } },
+    },
+);
 
 export const Appointment = mongoose.model("Appointment", appointmentSchema);

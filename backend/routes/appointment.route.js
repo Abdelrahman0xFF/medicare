@@ -9,11 +9,13 @@ import {
     checkInAppointment,
     getAvailableTimeSlots,
     rescheduleAppointment,
+    cancelAppointment,
 } from "../controllers/appointment.controller.js";
 import {
     validateAppointmentForm,
     validateUpdateAppointment,
     validateRescheduleAppointment,
+    validateCancelAppointment,
 } from "../validators/appointment.validator.js";
 
 import { protectAdminRoute } from "../middlewares/auth.middleware.js";
@@ -43,6 +45,11 @@ router.put(
     "/:id/reschedule",
     validateRequest(validateRescheduleAppointment),
     rescheduleAppointment,
+);
+router.put(
+    "/:id/cancel",
+    validateRequest(validateCancelAppointment),
+    cancelAppointment,
 );
 
 export default router;

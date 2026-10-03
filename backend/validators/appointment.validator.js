@@ -68,8 +68,24 @@ export const validateRescheduleAppointment = (data) => {
 export const validateUpdateAppointment = (data) => {
     const schema = Joi.object({
         status: Joi.string()
-            .valid("pending", "approved", "rejected", "completed")
+            .valid("pending", "approved", "rejected", "completed", "cancelled")
             .required(),
+        reason: Joi.string().max(500).optional().allow(""),
+    });
+    return schema.validate(data);
+};
+
+export const validateCancelAppointment = (data) => {
+    const schema = Joi.object({
+        fullName: Joi.string().min(3).max(100).required(),
+        phone: Joi.string()
+            .pattern(EGYPTIAN_PHONE_REGEX)
+            .required()
+            .messages({
+                "string.pattern.base":
+                    "Phone number must be a valid Egyptian mobile number (e.g. 01012345678 or +201012345678).",
+            }),
+        reason: Joi.string().max(500).optional().allow(""),
     });
     return schema.validate(data);
 };

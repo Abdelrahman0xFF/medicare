@@ -5,8 +5,12 @@ import { QueueEntry } from "../models/queue.model.js";
 import { Clinic } from "../models/clinic.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../utils/AppError.js";
-import { sendSMS } from "../utils/sms.js";
-import { sendWhatsAppMessage } from "../utils/whatsapp-gateway.js";
+import {
+    sendAppointmentConfirmation,
+    sendAppointmentCancellation,
+    sendAppointmentReschedule,
+    sendAppointmentPending,
+} from "../services/messaging.service.js";
 import { normalizeEgyptianPhone } from "../utils/phone.js";
 import { deleteCloudinaryAsset } from "../utils/cloudinaryHelper.js";
 
@@ -49,6 +53,10 @@ export const createAppointment = asyncHandler(async (req, res, next) => {
             receiptImageUrl,
             status: "pending",
         });
+
+        if (patient && patient.phone) {
+            await sendAppointmentPending({ appointment: newAppointment, patient });
+        }
 
         return res.status(201).json({
             success: true,
@@ -209,9 +217,10 @@ export const getPatientAppointments = asyncHandler(async (req, res, next) => {
 });
 
 export const updateAppointmentStatus = asyncHandler(async (req, res, next) => {
+    const { status, reason } = req.body;
     const appointment = await Appointment.findByIdAndUpdate(
         req.params.id,
-        { status: req.body.status },
+        { status },
         { returnDocument: "after" },
     );
 
@@ -219,21 +228,21 @@ export const updateAppointmentStatus = asyncHandler(async (req, res, next) => {
         return next(new AppError("Appointment not found", 404));
     }
 
-    let responseMessage = `Appointment ${req.body.status}`;
+    let responseMessage = `Appointment ${status}`;
 
-    if (req.body.status === "rejected" && appointment.receiptImageUrl) {
+    if ((status === "rejected" || status === "cancelled") && appointment.receiptImageUrl) {
         const deleted = await deleteCloudinaryAsset(appointment.receiptImageUrl);
         if (!deleted) {
             responseMessage += " (Warning: receipt image cleanup failed)";
         }
     }
 
-    if (req.body.status === "approved") {
-        const patient = await Patient.findById(appointment.patientId);
-        if (patient && patient.phone) {
-            const message = `Hello ${patient.fullName}, your appointment at MediCare Clinic for ${appointment.date} at ${appointment.time} is confirmed!`;
-            // sendSMS(patient.phone, message);
-            await sendWhatsAppMessage(patient.phone, message);
+    const patient = await Patient.findById(appointment.patientId);
+    if (patient) {
+        if (status === "approved") {
+            await sendAppointmentConfirmation({ appointment, patient });
+        } else if (status === "rejected" || status === "cancelled") {
+            await sendAppointmentCancellation({ appointment, patient, reason });
         }
     }
 
@@ -262,9 +271,9 @@ export const rescheduleAppointment = asyncHandler(async (req, res, next) => {
             new AppError("This appointment does not belong to you", 403),
         );
     }
-    if (appointment.status === "rejected") {
+    if (appointment.status === "rejected" || appointment.status === "cancelled") {
         return next(
-            new AppError("Cannot reschedule a rejected appointment", 400),
+            new AppError("Cannot reschedule a rejected or cancelled appointment", 400),
         );
     }
 
@@ -272,7 +281,7 @@ export const rescheduleAppointment = asyncHandler(async (req, res, next) => {
         _id: { $ne: appointment._id },
         date,
         time,
-        status: { $ne: "rejected" },
+        status: { $nin: ["rejected", "cancelled"] },
     });
     if (slotTaken) {
         return next(new AppError("This time slot is already booked", 400));
@@ -285,6 +294,10 @@ export const rescheduleAppointment = asyncHandler(async (req, res, next) => {
 
     try {
         await appointment.save();
+
+        if (patient) {
+            await sendAppointmentReschedule({ appointment, patient });
+        }
 
         return res.status(200).json({
             success: true,
@@ -302,6 +315,46 @@ export const rescheduleAppointment = asyncHandler(async (req, res, next) => {
         }
         throw err;
     }
+});
+
+export const cancelAppointment = asyncHandler(async (req, res, next) => {
+    const { phone, fullName, reason } = req.body;
+    const normalizedPhone = normalizeEgyptianPhone(phone);
+
+    const patient = await Patient.findOne({ phone: normalizedPhone, fullName: fullName.trim() });
+    if (!patient) {
+        return next(new AppError("Patient not found", 404));
+    }
+
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+        return next(new AppError("Appointment not found", 404));
+    }
+    if (appointment.patientId.toString() !== patient._id.toString()) {
+        return next(
+            new AppError("This appointment does not belong to you", 403),
+        );
+    }
+    if (appointment.status === "rejected" || appointment.status === "cancelled") {
+        return next(
+            new AppError("Appointment is already cancelled", 400),
+        );
+    }
+
+    appointment.status = "cancelled";
+    await appointment.save();
+
+    if (appointment.receiptImageUrl) {
+        await deleteCloudinaryAsset(appointment.receiptImageUrl);
+    }
+
+    await sendAppointmentCancellation({ appointment, patient, reason });
+
+    return res.status(200).json({
+        success: true,
+        message: "Appointment cancelled successfully",
+        data: appointment,
+    });
 });
 
 export const checkInAppointment = asyncHandler(async (req, res, next) => {

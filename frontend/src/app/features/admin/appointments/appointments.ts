@@ -57,7 +57,7 @@ export class Appointments implements OnInit {
     }
 
     get rejectedCount() {
-        return this.appointments().filter((a) => a.status === 'rejected').length;
+        return this.appointments().filter((a) => a.status === 'rejected' || a.status === 'cancelled').length;
     }
 
     get filterTabs() {
@@ -74,7 +74,9 @@ export class Appointments implements OnInit {
         const list =
             filter === 'all'
                 ? this.appointments()
-                : this.appointments().filter((a) => a.status === filter);
+                : filter === 'rejected'
+                  ? this.appointments().filter((a) => a.status === 'rejected' || a.status === 'cancelled')
+                  : this.appointments().filter((a) => a.status === filter);
         return list.map((a) => {
             const patientObj = (a.patientId && typeof a.patientId === 'object') ? a.patientId : null;
             return {

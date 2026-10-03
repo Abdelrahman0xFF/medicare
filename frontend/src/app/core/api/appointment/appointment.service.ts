@@ -36,9 +36,17 @@ export class AppointmentApi {
 
     updateStatus(
         id: string,
-        status: 'approved' | 'rejected' | 'completed',
+        status: 'approved' | 'rejected' | 'completed' | 'cancelled',
+        reason?: string,
     ): Observable<ApiResponse<AppointmentDto>> {
-        return this.http.put<ApiResponse<AppointmentDto>>(`${this.base}/${id}`, { status });
+        return this.http.put<ApiResponse<AppointmentDto>>(`${this.base}/${id}`, { status, reason });
+    }
+
+    cancel(
+        id: string,
+        data: { phone: string; fullName: string; reason?: string },
+    ): Observable<ApiResponse<AppointmentDto>> {
+        return this.http.put<ApiResponse<AppointmentDto>>(`${this.base}/${id}/cancel`, data);
     }
 
     reschedule(

@@ -9,6 +9,7 @@ import { BookingStepPayment } from './sections/step-payment';
 import { BookingStepReview } from './sections/step-review';
 import { BookingStepSuccess } from './sections/step-success';
 import { ScrollAnimateDirective } from '../../../shared/directives/scroll-animate.directive';
+import { scrollToTop } from '../../../utils/scroll';
 
 @Component({
     selector: 'app-booking',
@@ -36,7 +37,7 @@ import { ScrollAnimateDirective } from '../../../shared/directives/scroll-animat
                     [todayStr]="todayStr"
                     (dateChange)="onDateChange($event)"
                     (selectTime)="selectedTime = $event"
-                    (next)="step.set(2)"
+                    (next)="goToStep(2)"
                 />
             }
 
@@ -49,8 +50,8 @@ import { ScrollAnimateDirective } from '../../../shared/directives/scroll-animat
                     (fullNameChange)="fullName = $event"
                     (phoneChange)="phone = $event"
                     (reasonChange)="reason = $event"
-                    (next)="step.set(3)"
-                    (back)="step.set(1)"
+                    (next)="goToStep(3)"
+                    (back)="goToStep(1)"
                 />
             }
 
@@ -64,8 +65,8 @@ import { ScrollAnimateDirective } from '../../../shared/directives/scroll-animat
                     [receiptFileSizeKB]="receiptFile ? +(receiptFile.size / 1024).toFixed(1) : 0"
                     (fileSelected)="onFileSelected($event)"
                     (removeReceipt)="receiptFile = null"
-                    (next)="step.set(4)"
-                    (back)="step.set(2)"
+                    (next)="goToStep(4)"
+                    (back)="goToStep(2)"
                 />
             }
 
@@ -119,6 +120,11 @@ export class Booking {
         return new Date().toISOString().split('T')[0];
     }
 
+    goToStep(targetStep: number) {
+        this.step.set(targetStep);
+        scrollToTop();
+    }
+
     onDateChange(date: string) {
         this.selectedDate = date;
         this.selectedTime = '';
@@ -139,7 +145,7 @@ export class Booking {
 
     onBackFromReview() {
         this.submitting.set(false);
-        this.step.set(3);
+        this.goToStep(3);
     }
 
     submitBooking() {
@@ -162,7 +168,7 @@ export class Booking {
             next: (res) => {
                 this.confirmedAppointment = res.data ?? null;
                 this.submitting.set(false);
-                this.step.set(5);
+                this.goToStep(5);
             },
             error: () => {
                 this.submitting.set(false);

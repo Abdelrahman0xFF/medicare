@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ApiResponse } from '../shared/api.types';
 import { AdminDto, LoginRequest, CreateAdminRequest, DashboardStats } from './admin.types';
+import { SILENT_REQUEST } from '../api.interceptor';
 
 @Injectable({ providedIn: 'root' })
 export class AdminApi {
@@ -14,7 +15,9 @@ export class AdminApi {
     }
 
     getProfile(): Observable<ApiResponse<AdminDto>> {
-        return this.http.get<ApiResponse<AdminDto>>(this.base);
+        return this.http.get<ApiResponse<AdminDto>>(this.base, {
+            context: new HttpContext().set(SILENT_REQUEST, true),
+        });
     }
 
     getDashboardStats(): Observable<ApiResponse<DashboardStats>> {

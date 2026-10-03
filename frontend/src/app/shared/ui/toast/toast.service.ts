@@ -16,7 +16,7 @@ export class ToastService {
     show(message: string, type: ToastType = 'info', durationMs = 4000) {
         const id = this.idCounter++;
         const toast = { id, message, type };
-        this.toasts.update((current) => [...current, toast]);
+        this.toasts.update((current) => [...current, toast].slice(-5));
 
         setTimeout(() => this.remove(id), durationMs);
     }

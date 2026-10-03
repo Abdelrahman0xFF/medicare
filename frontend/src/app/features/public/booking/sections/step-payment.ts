@@ -171,7 +171,7 @@ import { UiButton } from '../../../../shared/ui/button';
                         role="button"
                         [class]="
                             'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors outline-none focus:ring-2 ' +
-                            (showErrors && !receiptFileName
+                            (fileError || (showErrors && !receiptFileName)
                                 ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
                                 : 'border-slate-300 hover:border-blue-500 focus:border-blue-400 focus:ring-blue-100')
                         "
@@ -179,16 +179,18 @@ import { UiButton } from '../../../../shared/ui/button';
                         (keydown.enter)="fileInput.click()"
                         (keydown.space)="fileInput.click(); $event.preventDefault()"
                     >
-                        @if (showErrors && !receiptFileName) {
+                        @if (fileError) {
+                            <p class="text-xs text-red-500 mb-2 font-medium">{{ fileError }}</p>
+                        } @else if (showErrors && !receiptFileName) {
                             <p class="text-xs text-red-500 mb-2">Payment screenshot is required</p>
                         }
                         <ng-icon name="fluentCloudAdd" size="32" class="text-slate-400 mb-3" />
                         <p class="font-medium text-slate-900 mb-1">Upload Payment Screenshot</p>
-                        <p class="text-sm text-slate-500">PNG or JPG, max 5MB</p>
+                        <p class="text-sm text-slate-500">PNG, JPG, or WebP, max 5MB</p>
                         <input
                             #fileInput
                             type="file"
-                            accept="image/png,image/jpeg"
+                            accept="image/png,image/jpeg,image/webp"
                             class="hidden"
                             (change)="onFileSelected($event)"
                         />
@@ -212,7 +214,7 @@ import { UiButton } from '../../../../shared/ui/button';
                         </div>
                         <button
                             type="button"
-                            (click)="removeReceipt.emit(); showErrors = false"
+                            (click)="removeReceipt.emit(); showErrors = false; fileError = ''"
                             class="size-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer shrink-0"
                         >
                             <ng-icon name="fluentDismiss" size="16" />
@@ -241,6 +243,7 @@ export class BookingStepPayment {
 
     copiedKey = '';
     showErrors = false;
+    fileError = '';
 
     copyText(text: string, key: string) {
         navigator.clipboard.writeText(text);
@@ -290,8 +293,15 @@ export class BookingStepPayment {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
         if (!file) return;
-        if (file.size > 5 * 1024 * 1024) return;
-        if (!['image/png', 'image/jpeg'].includes(file.type)) return;
+
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/webp'];
+        if (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
+            this.fileError = 'File must be a JPG, PNG, or WebP under 5MB';
+            input.value = '';
+            return;
+        }
+
+        this.fileError = '';
         this.fileSelected.emit(file);
         this.showErrors = false;
     }

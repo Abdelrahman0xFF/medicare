@@ -2,7 +2,12 @@ import { logger } from "./logger.js";
 
 const sendWhatsAppMessage = async (to, message) => {
   try {
-    const baseUrl = process.env.WHATSAPP_API_URL?.replace(/\/+$/, "");
+    if (!process.env.WHATSAPP_API_URL) {
+      logger.warn("WhatsApp Gateway not configured (WHATSAPP_API_URL is missing). Skipping WhatsApp dispatch.");
+      return null;
+    }
+
+    const baseUrl = process.env.WHATSAPP_API_URL.replace(/\/+$/, "");
     const apiUrl = `${baseUrl}/api/messages/send`;
     const apiKey = process.env.WHATSAPP_API_KEY;
 

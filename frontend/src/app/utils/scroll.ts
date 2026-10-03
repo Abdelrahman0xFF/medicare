@@ -1,3 +1,12 @@
+export function scrollToTop(behavior: ScrollBehavior = "smooth"): void {
+    if (typeof window !== "undefined") {
+        window.scrollTo({
+            top: 0,
+            behavior,
+        });
+    }
+}
+
 export function scrollToElement(id: string): void {
     const element = document.getElementById(id);
     if (!element) {

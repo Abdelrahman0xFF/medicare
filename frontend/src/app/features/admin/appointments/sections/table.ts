@@ -201,51 +201,153 @@ import { ScrollAnimateDirective } from '../../../../shared/directives/scroll-ani
 
         @if (viewApt) {
             <div
-                class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
                 (click)="viewApt = null"
                 (keydown.escape)="viewApt = null"
                 tabindex="0"
+                role="dialog"
             >
                 <div
-                    class="fixed inset-0 bg-black/70"
+                    class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
                     (click)="viewApt = null"
                     (keydown.enter)="viewApt = null"
                     tabindex="0"
                 ></div>
                 <div
-                    class="relative max-w-full max-h-full z-10"
+                    class="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl border border-slate-200 z-10 max-h-[90vh] flex flex-col overflow-hidden"
                     (click)="$event.stopPropagation()"
                     (keydown.escape)="$event.stopPropagation()"
                     tabindex="-1"
                 >
-                    <button
-                        type="button"
-                        (click)="viewApt = null"
-                        class="absolute -top-10 right-0 size-8 flex items-center justify-center rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition cursor-pointer"
-                    >
-                        <ng-icon name="fluentDismiss" size="20" />
-                    </button>
-
-                    @if (viewApt.receiptImageUrl) {
-                        <img
-                            [src]="viewApt.receiptImageUrl"
-                            alt="Payment receipt"
-                            class="max-w-full max-h-[85vh] w-auto h-auto rounded-lg shadow-2xl object-contain"
-                        />
-                    } @else {
-                        <div
-                            class="bg-slate-800 rounded-lg h-64 w-80 flex items-center justify-center border border-slate-600"
-                        >
-                            <div class="text-center">
-                                <ng-icon
-                                    name="fluentImage"
-                                    size="32"
-                                    class="text-slate-500 mx-auto mb-2 block"
-                                />
-                                <p class="text-sm text-slate-400">No receipt uploaded</p>
+                    <!-- Modal Header -->
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="size-10 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700 text-sm shrink-0">
+                                {{ viewApt.patientName.charAt(0) }}
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="font-bold text-slate-900 text-base leading-tight truncate">{{ viewApt.patientName }}</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Appointment Details & Verification</p>
                             </div>
                         </div>
-                    }
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span [class]="statusBadgeClass(viewApt.status)">
+                                {{ viewApt.status.charAt(0).toUpperCase() + viewApt.status.slice(1) }}
+                            </span>
+                            <button
+                                type="button"
+                                (click)="viewApt = null"
+                                class="size-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
+                            >
+                                <ng-icon name="fluentDismiss" size="18" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="p-6 overflow-y-auto space-y-5">
+                        <!-- Key info cards -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">
+                                <ng-icon name="fluentCalendarClock" size="20" class="text-blue-600 shrink-0" />
+                                <div>
+                                    <p class="text-xs text-slate-500 font-medium">Date & Time</p>
+                                    <p class="text-sm font-semibold text-slate-900">{{ viewApt.date }} at {{ viewApt.time }}</p>
+                                </div>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <ng-icon name="fluentPhone" size="20" class="text-emerald-600 shrink-0" />
+                                    <div class="min-w-0">
+                                        <p class="text-xs text-slate-500 font-medium">Phone</p>
+                                        <p class="text-sm font-semibold text-slate-900 font-mono truncate">{{ viewApt.phone }}</p>
+                                    </div>
+                                </div>
+                                <a
+                                    [href]="'tel:' + viewApt.phone"
+                                    class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium text-emerald-700 bg-emerald-100 hover:bg-emerald-200 transition shrink-0"
+                                >
+                                    Call
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Reason for Visit -->
+                        @if (viewApt.reason) {
+                            <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                <div class="flex items-center gap-2 mb-1.5 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                                    <ng-icon name="fluentDocumentText" size="14" class="text-slate-400" />
+                                    <span>Reason for Visit</span>
+                                </div>
+                                <p class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{{ viewApt.reason }}</p>
+                            </div>
+                        }
+
+                        <!-- Payment Receipt -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-semibold text-slate-700 uppercase tracking-wider">Payment Receipt</span>
+                                @if (viewApt.receiptImageUrl) {
+                                    <a
+                                        [href]="viewApt.receiptImageUrl"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="text-xs text-blue-600 hover:underline inline-flex items-center gap-1 font-medium"
+                                    >
+                                        Open Full Size &nearr;
+                                    </a>
+                                }
+                            </div>
+                            @if (viewApt.receiptImageUrl) {
+                                <div class="rounded-xl border border-slate-200 overflow-hidden bg-slate-900/5 max-h-72 flex items-center justify-center p-2">
+                                    <img
+                                        [src]="viewApt.receiptImageUrl"
+                                        alt="Payment receipt"
+                                        class="max-h-68 w-auto rounded-lg shadow-sm object-contain"
+                                    />
+                                </div>
+                            } @else {
+                                <div class="rounded-xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
+                                    <ng-icon name="fluentImage" size="28" class="text-slate-400 mx-auto mb-1.5 block" />
+                                    <p class="text-sm text-slate-500 font-medium">No receipt image uploaded</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer with actions -->
+                    <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-3 shrink-0">
+                        <button
+                            type="button"
+                            (click)="viewApt = null"
+                            class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                        >
+                            Close
+                        </button>
+
+                        @if (viewApt.status === 'pending') {
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    (click)="reject.emit(viewApt.id); viewApt = null"
+                                    [disabled]="actionLoading === viewApt.id"
+                                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 transition disabled:opacity-50 cursor-pointer"
+                                >
+                                    <ng-icon name="fluentDismiss" size="16" />
+                                    Reject
+                                </button>
+                                <button
+                                    type="button"
+                                    (click)="approve.emit(viewApt.id); viewApt = null"
+                                    [disabled]="actionLoading === viewApt.id"
+                                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50 cursor-pointer shadow-xs"
+                                >
+                                    <ng-icon name="fluentCheckmark" size="16" />
+                                    Approve
+                                </button>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         }

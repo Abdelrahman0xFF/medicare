@@ -21,7 +21,7 @@ export const createAppointment = asyncHandler(async (req, res, next) => {
     const existingAppointment = await Appointment.findOne({
         date,
         time,
-        status: { $ne: "rejected" },
+        status: { $nin: ["rejected", "cancelled"] },
     });
 
     if (existingAppointment) {
@@ -138,7 +138,7 @@ export const getAvailableTimeSlots = asyncHandler(async (req, res, next) => {
 
     const appointments = await Appointment.find({
         date,
-        status: { $ne: "rejected" },
+        status: { $nin: ["rejected", "cancelled"] },
     });
 
     const bookedTimes = appointments.map((appt) => appt.time);

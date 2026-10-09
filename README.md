@@ -184,12 +184,14 @@ cd clinic-appointment
    CLOUDINARY_API_KEY=your_cloudinary_api_key
    CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
-   # Twilio / WhatsApp Notifications (Optional for local testing)
+   # Twilio SMS Configuration
    TWILIO_ACCOUNT_SID=your_twilio_account_sid
    TWILIO_AUTH_TOKEN=your_twilio_auth_token
    TWILIO_PHONE_NUMBER=+1234567890
-   WHATSAPP_API_URL=your_whatsapp_api_url
-   WHATSAPP_API_KEY=your_whatsapp_api_key
+
+   # Zagel WhatsApp Gateway Configuration [https://github.com/Abdelrahman0xFF/zagel]
+   ZAGEL_API_URL=your_zagel_api_url
+   ZAGEL_API_KEY=your_zagel_api_key
 
    # Frontend Client URL
    FRONTEND_URL=http://localhost:4200

@@ -1,5 +1,6 @@
 import { client } from "../config/twilio.config.js";
 import { logger } from "./logger.js";
+import { normalizePhone } from "./phone.js";
 
 export const sendSMS = async (to, body) => {
     try {
@@ -8,12 +9,13 @@ export const sendSMS = async (to, body) => {
             return null;
         }
 
-        let formattedTo = to;
-        if (formattedTo.startsWith("01") && formattedTo.length === 11) {
-            formattedTo = "+20" + formattedTo.substring(1);
-        } else if (!formattedTo.startsWith("+")) {
-            formattedTo = "+20" + formattedTo.replace(/^0+/, "");
+        const formattedTo = normalizePhone(to);
+        if (!formattedTo || !/^\+[1-9]\d{6,14}$/.test(formattedTo)) {
+            logger.error(`[Twilio SMS] Invalid recipient phone number: ${to}`);
+            return null;
         }
+
+        logger.info(`[Twilio SMS] Sending SMS to ${formattedTo}...`);
 
         const message = await client.messages.create({
             body: body,

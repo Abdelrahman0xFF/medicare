@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { normalizeEgyptianPhone } from "../utils/phone.js";
+import { normalizePhone } from "../utils/phone.js";
 
 const patientSchema = new mongoose.Schema(
     {
@@ -9,10 +9,10 @@ const patientSchema = new mongoose.Schema(
             required: true,
             trim: true,
             unique: true,
-            set: normalizeEgyptianPhone,
+            set: normalizePhone,
             match: [
-                /^201[0125][0-9]{8}$/,
-                "Invalid Egyptian phone number. Must be a valid mobile number starting with 01 or 20 (e.g. 01012345678 or 201012345678)",
+                /^\+?[1-9]\d{6,14}$/,
+                "Invalid phone number. Must be a valid phone number (e.g. +201012345678 or +966501234567)",
             ],
         },
     },

@@ -31,7 +31,7 @@ export class AppointmentApi {
 
     getPatientAppointments(phone: string, fullName: string, params?: { page?: number; limit?: number }): Observable<PaginatedResponse<AppointmentDto>> {
         return this.http
-            .get<PaginatedResponse<AppointmentDto>>(`${this.base}/${phone}/${fullName}`, { params });
+            .get<PaginatedResponse<AppointmentDto>>(`${this.base}/${encodeURIComponent(phone)}/${encodeURIComponent(fullName)}`, { params });
     }
 
     updateStatus(

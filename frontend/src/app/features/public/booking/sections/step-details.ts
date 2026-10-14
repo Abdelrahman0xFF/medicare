@@ -1,9 +1,11 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { UiButton } from '../../../../shared/ui/button';
+import { UiPhoneInput } from '../../../../shared/ui/phone-input/phone-input';
+import { Country, DEFAULT_COUNTRY, validatePhoneNumber } from '../../../../shared/ui/phone-input/countries';
 
 @Component({
     selector: 'app-booking-step-details',
-    imports: [UiButton],
+    imports: [UiButton, UiPhoneInput],
     template: `
         <div class="rounded-xl border border-slate-200 bg-white p-6 lg:p-8">
             <h2 class="text-2xl font-bold text-slate-900 mb-6">Your Details</h2>
@@ -36,28 +38,18 @@ import { UiButton } from '../../../../shared/ui/button';
                         class="block text-sm font-semibold text-slate-900 mb-2"
                         >Phone Number *</label
                     >
-                    <div
-                        [class]="'flex items-center rounded-lg border bg-white overflow-hidden transition-all focus-within:ring-2 ' + ((showErrors && !phone) ? 'border-red-300 focus-within:border-red-400 focus-within:ring-red-100' : (showErrors && !isValidPhone ? 'border-red-300 focus-within:border-red-400 focus-within:ring-red-100' : 'border-slate-200 focus-within:border-blue-400 focus-within:ring-blue-100'))"
-                    >
-                        <div
-                            class="flex items-center justify-center px-3.5 py-2.5 bg-slate-50 border-r border-slate-200 text-slate-600 font-mono text-sm font-semibold select-none"
-                        >
-                            <span>+20</span>
-                        </div>
-                        <input
-                            id="booking-phone"
-                            type="tel"
-                            [value]="restPhone"
-                            (input)="onPhoneInput($any($event.target).value)"
-                            placeholder="1123123123"
-                            maxlength="11"
-                            class="w-full px-3.5 py-2.5 bg-transparent text-sm text-slate-900 font-mono placeholder:text-slate-400 outline-none"
-                        />
-                    </div>
+                    <app-phone-input
+                        id="booking-phone"
+                        [phone]="phone"
+                        [hasError]="showErrors && (!phone || !isValidPhone)"
+                        (phoneChange)="onPhoneChange($event)"
+                        (validChange)="isPhoneValid = $event"
+                        (countryChange)="currentCountry = $event"
+                    />
                     @if (showErrors && !phone) {
                         <p class="text-xs text-red-500 mt-1.5">Phone number is required</p>
                     } @else if (showErrors && !isValidPhone) {
-                        <p class="text-xs text-red-500 mt-1.5">Enter a valid mobile number (e.g. 10xxxxxxxx, 11xxxxxxxx, 12xxxxxxxx, 15xxxxxxxx)</p>
+                        <p class="text-xs text-red-500 mt-1.5">{{ phoneErrorMessage }}</p>
                     }
                 </div>
                 <div>
@@ -86,7 +78,7 @@ import { UiButton } from '../../../../shared/ui/button';
         </div>
     `,
 })
-export class BookingStepDetails {
+export class BookingStepDetails implements OnInit {
     @Input() fullName = '';
     @Input() phone = '';
     @Input() reason = '';
@@ -97,30 +89,29 @@ export class BookingStepDetails {
     @Output() back = new EventEmitter<void>();
 
     showErrors = false;
+    isPhoneValid = false;
+    currentCountry: Country = DEFAULT_COUNTRY;
 
-    get restPhone(): string {
-        if (!this.phone) return '';
-        let num = this.phone.replace(/^\+?20/, '');
-        if (num.startsWith('0')) num = num.substring(1);
-        return num;
-    }
-
-    onPhoneInput(value: string) {
-        this.showErrors = false;
-        let digits = value.replace(/\D/g, '');
-        if (digits.startsWith('20')) {
-            digits = digits.substring(2);
+    ngOnInit() {
+        if (this.phone) {
+            this.isPhoneValid = /^\+[1-9]\d{6,14}$/.test(this.phone);
         }
-        if (digits.startsWith('0')) {
-            digits = digits.substring(1);
-        }
-        digits = digits.slice(0, 10);
-        const fullPhone = digits ? `+20${digits}` : '';
-        this.phoneChange.emit(fullPhone);
     }
 
     get isValidPhone(): boolean {
-        return /^\+?201[0125][0-9]{8}$/.test(this.phone);
+        return this.isPhoneValid || /^\+[1-9]\d{6,14}$/.test(this.phone);
+    }
+
+    get phoneErrorMessage(): string {
+        if (this.currentCountry.code === 'EG') {
+            return 'Enter a valid Egyptian mobile number (e.g. 10xxxxxxxx, 11xxxxxxxx, 12xxxxxxxx, 15xxxxxxxx)';
+        }
+        return `Enter a valid phone number for ${this.currentCountry.name} (e.g. ${this.currentCountry.placeholder})`;
+    }
+
+    onPhoneChange(val: string) {
+        this.showErrors = false;
+        this.phoneChange.emit(val);
     }
 
     onNext() {
@@ -131,3 +122,4 @@ export class BookingStepDetails {
         }
     }
 }
+

@@ -1,15 +1,15 @@
 import Joi from "joi";
-import { EGYPTIAN_PHONE_REGEX } from "../utils/phone.js";
+import { PHONE_REGEX } from "../utils/phone.js";
 
 export const validateAppointmentForm = (data) => {
     const schema = Joi.object({
         fullName: Joi.string().min(3).max(100).required(),
         phone: Joi.string()
-            .pattern(EGYPTIAN_PHONE_REGEX)
+            .pattern(PHONE_REGEX)
             .required()
             .messages({
                 "string.pattern.base":
-                    "Phone number must be a valid Egyptian mobile number (e.g. 01012345678 or +201012345678).",
+                    "Phone number must be a valid phone number with country code (e.g. +201012345678 or +966501234567).",
             }),
         reason: Joi.string().min(0).max(500).optional().allow(""),
         date: Joi.string()
@@ -38,11 +38,11 @@ export const validateRescheduleAppointment = (data) => {
     const schema = Joi.object({
         fullName: Joi.string().min(3).max(100).required(),
         phone: Joi.string()
-            .pattern(EGYPTIAN_PHONE_REGEX)
+            .pattern(PHONE_REGEX)
             .required()
             .messages({
                 "string.pattern.base":
-                    "Phone number must be a valid Egyptian mobile number (e.g. 01012345678 or +201012345678).",
+                    "Phone number must be a valid phone number with country code (e.g. +201012345678 or +966501234567).",
             }),
         date: Joi.string()
             .pattern(/^\d{4}-\d{2}-\d{2}$/)
@@ -79,11 +79,11 @@ export const validateCancelAppointment = (data) => {
     const schema = Joi.object({
         fullName: Joi.string().min(3).max(100).required(),
         phone: Joi.string()
-            .pattern(EGYPTIAN_PHONE_REGEX)
+            .pattern(PHONE_REGEX)
             .required()
             .messages({
                 "string.pattern.base":
-                    "Phone number must be a valid Egyptian mobile number (e.g. 01012345678 or +201012345678).",
+                    "Phone number must be a valid phone number with country code (e.g. +201012345678 or +966501234567).",
             }),
         reason: Joi.string().max(500).optional().allow(""),
     });

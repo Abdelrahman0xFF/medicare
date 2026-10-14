@@ -1,4 +1,5 @@
 import { logger } from "./logger.js";
+import { normalizePhone } from "./phone.js";
 
 const sendZagelMessage = async (to, message) => {
     try {
@@ -15,10 +16,7 @@ const sendZagelMessage = async (to, message) => {
         const baseUrl = rawUrl.replace(/\/+$/, "");
         const apiUrl = `${baseUrl}/api/messages/send`;
 
-        let cleanNumber = to ? to.toString().replace(/^\+/, "").trim() : "";
-        if (cleanNumber.startsWith("01") && cleanNumber.length === 11) {
-            cleanNumber = "20" + cleanNumber.substring(1);
-        }
+        let cleanNumber = to ? normalizePhone(to).replace(/^\+/, "").trim() : "";
 
         logger.info(`[Zagel Gateway] Dispatching WhatsApp message to ${cleanNumber}...`);
 

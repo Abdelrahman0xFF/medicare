@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { PHONE_REGEX } from "../utils/phone.js";
 
 export const validateClinicUpdate = (data) => {
     const schema = Joi.object({
@@ -6,12 +7,12 @@ export const validateClinicUpdate = (data) => {
         specialization: Joi.string().required(),
         address: Joi.string().required(),
         phone: Joi.string()
-            .pattern(/^(?:01|\+?201)[0125][0-9]{8}$/)
+            .pattern(PHONE_REGEX)
             .trim()
             .required()
             .messages({
                 "string.pattern.base":
-                    "Phone number must be a valid Egyptian phone number (e.g. 01012345678).",
+                    "Phone number must be a valid phone number (e.g. 01012345678 or +201012345678).",
             }),
 
         socialMedia: Joi.object()

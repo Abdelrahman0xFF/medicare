@@ -11,12 +11,12 @@ import {
     sendAppointmentReschedule,
     sendAppointmentPending,
 } from "../services/messaging.service.js";
-import { normalizeEgyptianPhone } from "../utils/phone.js";
+import { normalizePhone } from "../utils/phone.js";
 import { deleteCloudinaryAsset } from "../utils/cloudinaryHelper.js";
 
 export const createAppointment = asyncHandler(async (req, res, next) => {
     const { fullName, phone, reason, date, time } = req.body;
-    const normalizedPhone = normalizeEgyptianPhone(phone);
+    const normalizedPhone = normalizePhone(phone);
 
     const existingAppointment = await Appointment.findOne({
         date,
@@ -34,11 +34,16 @@ export const createAppointment = asyncHandler(async (req, res, next) => {
         receiptImageUrl = req.file.path;
     }
 
-    let patient = await Patient.findOne({ phone: normalizedPhone });
+    const phoneVariants = [normalizedPhone, normalizedPhone.replace(/^\+/, "")];
+    let patient = await Patient.findOne({ phone: { $in: phoneVariants } });
     if (patient) {
         if (patient.fullName !== fullName.trim()) {
             if (req.file) await deleteCloudinaryAsset(req.file.filename || req.file.path);
             return next(new AppError("This phone number is already associated with a different name", 400));
+        }
+        if (patient.phone !== normalizedPhone) {
+            patient.phone = normalizedPhone;
+            await patient.save().catch(() => {});
         }
     } else {
         patient = await Patient.create({ fullName: fullName.trim(), phone: normalizedPhone });
@@ -189,8 +194,9 @@ export const getAppointments = asyncHandler(async (req, res, next) => {
 
 export const getPatientAppointments = asyncHandler(async (req, res, next) => {
     const { phone, fullName } = req.params;
-    const normalizedPhone = normalizeEgyptianPhone(phone);
-    const patient = await Patient.findOne({ phone: normalizedPhone, fullName: fullName.trim() });
+    const normalizedPhone = normalizePhone(phone);
+    const phoneVariants = [normalizedPhone, normalizedPhone.replace(/^\+/, "")];
+    const patient = await Patient.findOne({ phone: { $in: phoneVariants }, fullName: fullName.trim() });
     if (!patient) {
         return next(new AppError("Patient not found", 404));
     }
@@ -255,9 +261,10 @@ export const updateAppointmentStatus = asyncHandler(async (req, res, next) => {
 
 export const rescheduleAppointment = asyncHandler(async (req, res, next) => {
     const { date, time, phone, fullName } = req.body;
-    const normalizedPhone = normalizeEgyptianPhone(phone);
+    const normalizedPhone = normalizePhone(phone);
+    const phoneVariants = [normalizedPhone, normalizedPhone.replace(/^\+/, "")];
 
-    const patient = await Patient.findOne({ phone: normalizedPhone, fullName: fullName.trim() });
+    const patient = await Patient.findOne({ phone: { $in: phoneVariants }, fullName: fullName.trim() });
     if (!patient) {
         return next(new AppError("Patient not found", 404));
     }
@@ -319,9 +326,10 @@ export const rescheduleAppointment = asyncHandler(async (req, res, next) => {
 
 export const cancelAppointment = asyncHandler(async (req, res, next) => {
     const { phone, fullName, reason } = req.body;
-    const normalizedPhone = normalizeEgyptianPhone(phone);
+    const normalizedPhone = normalizePhone(phone);
+    const phoneVariants = [normalizedPhone, normalizedPhone.replace(/^\+/, "")];
 
-    const patient = await Patient.findOne({ phone: normalizedPhone, fullName: fullName.trim() });
+    const patient = await Patient.findOne({ phone: { $in: phoneVariants }, fullName: fullName.trim() });
     if (!patient) {
         return next(new AppError("Patient not found", 404));
     }

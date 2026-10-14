@@ -45,6 +45,7 @@ const clinicSchema = new mongoose.Schema(
         consultationFee: { type: Number, required: true },
         instapayLink: { type: String, required: true },
         walletNumber: { type: String, required: true, trim: true },
+        timezone: { type: String, default: "Africa/Cairo" },
         credentials: [{ type: String }],
     },
     {

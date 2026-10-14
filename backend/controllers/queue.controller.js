@@ -39,9 +39,18 @@ export const getLiveQueue = asyncHandler(async (req, res, next) => {
 });
 
 export const updateQueueStage = asyncHandler(async (req, res, next) => {
+    const { stage } = req.body;
+    const updateData = { stage };
+
+    if (stage === "in_consultation") {
+        updateData.consultationStartedAt = new Date();
+    } else if (stage === "completed") {
+        updateData.completedAt = new Date();
+    }
+
     const entry = await QueueEntry.findByIdAndUpdate(
         req.params.id,
-        { stage: req.body.stage },
+        updateData,
         { returnDocument: "after" },
     );
 
@@ -49,13 +58,13 @@ export const updateQueueStage = asyncHandler(async (req, res, next) => {
         return next(new AppError("Queue entry not found", 404));
     }
 
-    if (req.body.stage === "completed" && entry.appointmentId) {
+    if (stage === "completed" && entry.appointmentId) {
         await Appointment.findByIdAndUpdate(entry.appointmentId, { status: "completed" });
     }
 
     return res.status(200).json({
         success: true,
-        message: `Patient moved to ${req.body.stage}`,
+        message: `Patient moved to ${stage}`,
         data: entry,
     });
 });

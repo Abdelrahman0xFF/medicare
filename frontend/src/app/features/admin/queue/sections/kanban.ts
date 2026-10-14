@@ -57,20 +57,27 @@ import { ScrollAnimateDirective } from '../../../../shared/directives/scroll-ani
                                                 entry.patientName.charAt(0)
                                             }}</span>
                                         </div>
-                                        <div class="min-w-0">
+                                        <div class="min-w-0 flex-1">
                                             <p class="font-medium text-slate-900 text-sm truncate">
                                                 {{ entry.patientName }}
                                             </p>
-                                            <div class="flex items-center gap-1.5 mt-0.5">
+                                            <div class="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
                                                 <ng-icon
                                                     name="fluentClock"
                                                     size="13"
-                                                    class="text-slate-400 shrink-0"
+                                                    class="text-amber-500 shrink-0"
                                                 />
-                                                <span class="text-xs text-slate-500">{{
-                                                    entry.time
-                                                }}</span>
+                                                <span>{{ entry.timeLabel }} {{ entry.operationalTime }}</span>
+                                                @if (entry.elapsedText) {
+                                                    <span class="text-slate-300">·</span>
+                                                    <span class="text-amber-700 font-medium bg-amber-100/60 px-1.5 py-0.5 rounded text-[11px]">{{ entry.elapsedText }}</span>
+                                                }
                                             </div>
+                                            @if (entry.appointmentTime && entry.appointmentTime !== '--:--') {
+                                                <p class="text-[11px] text-slate-400 mt-0.5">
+                                                    Appt: {{ entry.appointmentTime }}
+                                                </p>
+                                            }
                                         </div>
                                     </div>
                                     <button
@@ -142,20 +149,27 @@ import { ScrollAnimateDirective } from '../../../../shared/directives/scroll-ani
                                                 entry.patientName.charAt(0)
                                             }}</span>
                                         </div>
-                                        <div class="min-w-0">
+                                        <div class="min-w-0 flex-1">
                                             <p class="font-medium text-slate-900 text-sm truncate">
                                                 {{ entry.patientName }}
                                             </p>
-                                            <div class="flex items-center gap-1.5 mt-0.5">
+                                            <div class="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
                                                 <ng-icon
                                                     name="fluentClock"
                                                     size="13"
-                                                    class="text-slate-400 shrink-0"
+                                                    class="text-blue-500 shrink-0"
                                                 />
-                                                <span class="text-xs text-slate-500">{{
-                                                    entry.time
-                                                }}</span>
+                                                <span>{{ entry.timeLabel }} {{ entry.operationalTime }}</span>
+                                                @if (entry.elapsedText) {
+                                                    <span class="text-slate-300">·</span>
+                                                    <span class="text-blue-700 font-medium bg-blue-100/60 px-1.5 py-0.5 rounded text-[11px]">{{ entry.elapsedText }}</span>
+                                                }
                                             </div>
+                                            @if (entry.appointmentTime && entry.appointmentTime !== '--:--') {
+                                                <p class="text-[11px] text-slate-400 mt-0.5">
+                                                    Appt: {{ entry.appointmentTime }}
+                                                </p>
+                                            }
                                         </div>
                                     </div>
                                     <button
@@ -226,20 +240,27 @@ import { ScrollAnimateDirective } from '../../../../shared/directives/scroll-ani
                                             entry.patientName.charAt(0)
                                         }}</span>
                                     </div>
-                                    <div class="min-w-0">
+                                    <div class="min-w-0 flex-1">
                                         <p class="font-medium text-slate-900 text-sm truncate">
                                             {{ entry.patientName }}
                                         </p>
-                                        <div class="flex items-center gap-1.5 mt-0.5">
+                                        <div class="flex items-center gap-1.5 mt-0.5 text-xs text-emerald-600">
                                             <ng-icon
                                                 name="fluentCheckmarkCircle"
                                                 size="13"
                                                 class="text-emerald-500 shrink-0"
                                             />
-                                            <span class="text-xs text-emerald-600"
-                                                >Completed at {{ entry.time }}</span
-                                            >
+                                            <span>Completed {{ entry.operationalTime }}</span>
+                                            @if (entry.elapsedText) {
+                                                <span class="text-slate-300">·</span>
+                                                <span class="text-emerald-700 font-medium bg-emerald-100/60 px-1.5 py-0.5 rounded text-[11px]">{{ entry.elapsedText }}</span>
+                                            }
                                         </div>
+                                        @if (entry.appointmentTime && entry.appointmentTime !== '--:--') {
+                                            <p class="text-[11px] text-slate-400 mt-0.5">
+                                                Appt: {{ entry.appointmentTime }}
+                                            </p>
+                                        }
                                     </div>
                                 </div>
                             </div>

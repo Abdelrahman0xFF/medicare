@@ -99,6 +99,28 @@ export class Queue implements OnInit {
         return e.time || '--:--';
     }
 
+    private formatTime(val?: string | Date): string {
+        if (!val) return '--:--';
+        const d = new Date(val);
+        if (isNaN(d.getTime())) {
+            return typeof val === 'string' ? val : '--:--';
+        }
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    private getElapsedMinutes(startVal?: string | Date, endVal?: string | Date): string {
+        if (!startVal) return '';
+        const start = new Date(startVal).getTime();
+        const end = endVal ? new Date(endVal).getTime() : Date.now();
+        if (isNaN(start) || isNaN(end)) return '';
+        const diffMin = Math.max(0, Math.floor((end - start) / 60000));
+        if (diffMin < 1) return 'Just now';
+        if (diffMin < 60) return `${diffMin}m`;
+        const hrs = Math.floor(diffMin / 60);
+        const mins = diffMin % 60;
+        return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+    }
+
     private getTodayDateString(): string {
         const now = new Date();
         const y = now.getFullYear();
@@ -110,31 +132,52 @@ export class Queue implements OnInit {
     waitingCards = computed<QueueCardItem[]>(() =>
         this.queueEntries()
             .filter((e) => e.stage === 'waiting')
-            .map((e) => ({
-                id: e.id,
-                patientName: this.getPatientName(e),
-                time: this.getAppointmentTime(e),
-            })),
+            .map((e) => {
+                const arrivedTime = e.arrivedAt || e.createdAt;
+                return {
+                    id: e.id,
+                    patientName: this.getPatientName(e),
+                    time: this.getAppointmentTime(e),
+                    appointmentTime: this.getAppointmentTime(e),
+                    operationalTime: this.formatTime(arrivedTime),
+                    timeLabel: 'Arrived',
+                    elapsedText: arrivedTime ? `${this.getElapsedMinutes(arrivedTime)}` : '',
+                };
+            }),
     );
 
     consultationCards = computed<QueueCardItem[]>(() =>
         this.queueEntries()
             .filter((e) => e.stage === 'in_consultation')
-            .map((e) => ({
-                id: e.id,
-                patientName: this.getPatientName(e),
-                time: this.getAppointmentTime(e),
-            })),
+            .map((e) => {
+                const startTime = e.consultationStartedAt || e.updatedAt;
+                return {
+                    id: e.id,
+                    patientName: this.getPatientName(e),
+                    time: this.getAppointmentTime(e),
+                    appointmentTime: this.getAppointmentTime(e),
+                    operationalTime: this.formatTime(startTime),
+                    timeLabel: 'Started',
+                    elapsedText: startTime ? `${this.getElapsedMinutes(startTime)}` : '',
+                };
+            }),
     );
 
     completedCards = computed<QueueCardItem[]>(() =>
         this.queueEntries()
             .filter((e) => e.stage === 'completed')
-            .map((e) => ({
-                id: e.id,
-                patientName: this.getPatientName(e),
-                time: this.getAppointmentTime(e),
-            })),
+            .map((e) => {
+                const finishTime = e.completedAt || e.updatedAt;
+                const startTime = e.consultationStartedAt || e.arrivedAt || e.createdAt;
+                return {
+                    id: e.id,
+                    patientName: this.getPatientName(e),
+                    time: this.getAppointmentTime(e),
+                    appointmentTime: this.getAppointmentTime(e),
+                    operationalTime: this.formatTime(finishTime),
+                    timeLabel: 'Completed',
+                    };
+            }),
     );
 
     checkInCandidates = computed<CheckInCandidate[]>(() => {

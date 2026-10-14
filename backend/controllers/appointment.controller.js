@@ -90,17 +90,12 @@ export const getAvailableTimeSlots = asyncHandler(async (req, res, next) => {
         return next(new AppError("Date query parameter is required", 400));
     }
 
-    const dateObj = new Date(date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const requestedDate = new Date(dateObj);
-    requestedDate.setHours(0, 0, 0, 0);
-
-    if (requestedDate < today) {
-        return res.status(200).json({ success: true, data: [] });
+    const parts = date.split("-").map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) {
+        return next(new AppError("Invalid date format. Expected YYYY-MM-DD", 400));
     }
-
-    const isToday = requestedDate.getTime() === today.getTime();
+    const [year, month, day] = parts;
+    const requestedDate = new Date(year, month - 1, day);
 
     const days = [
         "sunday",
@@ -111,12 +106,36 @@ export const getAvailableTimeSlots = asyncHandler(async (req, res, next) => {
         "friday",
         "saturday",
     ];
-    const dayOfWeek = days[dateObj.getDay()];
+    const dayOfWeek = days[requestedDate.getDay()];
 
     const clinic = await Clinic.findOne({ tenantId: "main_clinic" });
     if (!clinic) {
         return next(new AppError("Clinic configuration not found", 404));
     }
+
+    // clinic time zone to avoid UTC day-shift
+    const clinicTimeZone = clinic.timezone || "Africa/Cairo";
+
+    const now = new Date();
+    const clinicTodayStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: clinicTimeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(now);
+
+    const clinicCurrentTime = new Intl.DateTimeFormat("en-GB", {
+        timeZone: clinicTimeZone,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    }).format(now);
+
+    if (date < clinicTodayStr) {
+        return res.status(200).json({ success: true, data: [] });
+    }
+
+    const isToday = date === clinicTodayStr;
 
     const workingHours = clinic.workingHours.get(dayOfWeek);
 
@@ -126,12 +145,16 @@ export const getAvailableTimeSlots = asyncHandler(async (req, res, next) => {
 
     const generateTimeSlots = (start, end) => {
         const slots = [];
-        let current = new Date(`1970-01-01T${start}:00Z`);
-        const endTime = new Date(`1970-01-01T${end}:00Z`);
+        const [startH, startM] = start.split(":").map(Number);
+        const [endH, endM] = end.split(":").map(Number);
+        let currentMinutes = startH * 60 + startM;
+        const endMinutes = endH * 60 + endM;
 
-        while (current < endTime) {
-            slots.push(current.toISOString().substring(11, 16));
-            current.setMinutes(current.getMinutes() + 30);
+        while (currentMinutes < endMinutes) {
+            const h = String(Math.floor(currentMinutes / 60)).padStart(2, "0");
+            const m = String(currentMinutes % 60).padStart(2, "0");
+            slots.push(`${h}:${m}`);
+            currentMinutes += 30;
         }
         return slots;
     };
@@ -148,12 +171,9 @@ export const getAvailableTimeSlots = asyncHandler(async (req, res, next) => {
 
     const bookedTimes = appointments.map((appt) => appt.time);
 
-    const now = new Date();
-    const currentTimeString = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
     const availableTimeSlots = allTimeSlots.filter((time) => {
         if (bookedTimes.includes(time)) return false;
-        if (isToday && time < currentTimeString) return false;
+        if (isToday && time <= clinicCurrentTime) return false;
         return true;
     });
 
@@ -389,8 +409,9 @@ export const checkInAppointment = asyncHandler(async (req, res, next) => {
         const queueEntry = await QueueEntry.create({
             appointmentId: appointment._id,
             date: appointment.date,
-            time: appointment.time || new Date().toISOString().substring(11, 16),
+            time: appointment.time || "",
             stage: "waiting",
+            arrivedAt: new Date(),
         });
 
         return res.status(200).json({

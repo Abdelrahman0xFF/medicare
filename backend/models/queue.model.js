@@ -14,6 +14,18 @@ const queueEntrySchema = new mongoose.Schema(
             enum: ["waiting", "in_consultation", "completed"],
             default: "waiting",
         },
+        arrivedAt: {
+            type: Date,
+            default: Date.now,
+        },
+        consultationStartedAt: {
+            type: Date,
+            default: null,
+        },
+        completedAt: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true,

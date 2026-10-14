@@ -7,6 +7,9 @@ export interface QueueEntryDto {
     };
     time: string;
     stage: 'waiting' | 'in_consultation' | 'completed';
+    arrivedAt?: string;
+    consultationStartedAt?: string;
+    completedAt?: string;
     createdAt: string;
     updatedAt: string;
 }
